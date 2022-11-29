@@ -21,3 +21,10 @@
         (spit f remote-input)
         remote-input))))
 
+(defn run-solution
+  [{:keys [year day part-1 part-2]}]
+  (let [input (get-puzzle-input year day)
+        result-1 (part-1 input)
+        result-2 (part-2 input)]
+    (println "Part 1: " result-1)
+    (println "Part 2: " result-2)))
