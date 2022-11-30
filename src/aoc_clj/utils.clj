@@ -1,4 +1,4 @@
-(ns aoc-2022.utils)
+(ns aoc-clj.utils)
 
 (defn parse-binary
   [s]

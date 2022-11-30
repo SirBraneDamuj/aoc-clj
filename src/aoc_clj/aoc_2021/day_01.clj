@@ -1,4 +1,4 @@
-(ns aoc-2022.aoc-2021.day-01
+(ns aoc-clj.aoc-2021.day-01
   (:require [clojure.string :as str]))
 
 (defn part-1
@@ -26,6 +26,6 @@
    :part-2 part-2})
 
 (comment
-  (require '[aoc-2022.core :as aoc])
+  (require '[aoc-clj.core :as aoc])
   (aoc/run-solution solution))
 

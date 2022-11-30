@@ -1,6 +1,6 @@
-(ns aoc-2022.aoc-2021.day-03
+(ns aoc-clj.aoc-2021.day-03
   (:require [clojure.string :as str]
-            [aoc-2022.utils :as utils]))
+            [aoc-clj.utils :as utils]))
 
 (defn count-bits
   [counts line]
@@ -72,5 +72,5 @@
    :part-2 part-2})
 
 (comment
-  (require '[aoc-2022.core :as aoc])
+  (require '[aoc-clj.core :as aoc])
   (aoc/run-solution solution))

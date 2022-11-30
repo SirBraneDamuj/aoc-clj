@@ -1,5 +1,5 @@
-(ns aoc-2022.aoc-2021.day-02-test
-  (:require [aoc-2022.aoc-2021.day-02 :as day-02]
+(ns aoc-clj.aoc-2021.day-02-test
+  (:require [aoc-clj.aoc-2021.day-02 :as day-02]
             [clojure.test :refer [deftest testing is]]
             [clojure.java.io :as io]))
 

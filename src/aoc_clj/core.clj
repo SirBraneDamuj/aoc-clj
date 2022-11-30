@@ -1,4 +1,4 @@
-(ns aoc-2022.core
+(ns aoc-clj.core
   (:require [clj-http.client :as client]
             [clojure.string :as str]
             [clojure.java.io :as io]))
