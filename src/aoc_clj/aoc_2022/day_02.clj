@@ -1,93 +1,87 @@
 (ns aoc-clj.aoc-2022.day-02
   (:require [clojure.string :as str]))
 
-(def sample-input
-  "A Y
-B X
-C Z")
+(def throw->score
+  {:rock     1
+   :paper    2
+   :scissors 3})
 
-(def throw-scores
-  {\X 1
-   \Y 2
-   \Z 3})
-
-;; A ROCK
-;; B PAPER
-;; C SCISSORS
-
-;; X ROCK
-;; Y PAPER
-;; Z SCISSORS
+(def char->throw
+  {\X :rock
+   \A :rock
+   \Y :paper
+   \B :paper
+   \Z :scissors
+   \C :scissors})
 
 (def round-scores
-  {\X {\A 3
-       \B 0
-       \C 6}
-   \Y {\A 6
-       \B 3
-       \C 0}
-   \Z {\A 0
-       \B 6
-       \C 3}})
+  {:rock     {:rock     3
+              :paper    0
+              :scissors 6}
+   :paper    {:rock     6
+              :paper    3
+              :scissors 0}
+   :scissors {:rock     0
+              :paper    6
+              :scissors 3}})
 
-(defn score-round
+(defn score-round-of-throws
   [round-str]
-  (let [[you _ me] round-str
-        score (+ (get throw-scores me) (get-in round-scores [me you]))
-        _ (println round-str score)]
-    score))
+  (let [[you me] (->> round-str
+                      (filter #(not= % \ ))
+                      (map char->throw))]
+    (+ (throw->score me) (get-in round-scores [me you]))))
 
 (defn part-1
   [input]
   (let [lines (str/split-lines input)
-        scores (map score-round lines)]
+        scores (map score-round-of-throws lines)]
     (apply + scores)))
 
-(def wins
-  {\A \Y
-   \B \Z
-   \C \X})
+(def char->outcome
+  {\X :lose
+   \Y :draw
+   \Z :win})
 
-(def losses
-  {\A \Z
-   \B \X
-   \C \Y})
+(def plan
+  {:lose {:rock :scissors
+          :paper :rock
+          :scissors :paper}
+   :draw {:rock :rock
+          :paper :paper
+          :scissors :scissors}
+   :win  {:rock :paper
+          :paper :scissors
+          :scissors :rock}})
 
-(def draws
-  {\A \X
-   \B \Y
-   \C \Z})
+(def outcome->score
+  {:lose 0
+   :draw 3
+   :win  6})
 
-(def scores
-  {\X 0
-   \Y 3
-   \Z 6})
-
-(defn plan-round
+(defn score-round-of-throw-and-outcome
   [round-str]
-  (let [[you _ outcome] round-str
-        throw (cond
-                (= outcome \X)
-                (get losses you)
-
-                (= outcome \Y)
-                (get draws you)
-
-                (= outcome \Z)
-                (get wins you))
-        throw-score (get throw-scores throw)
-        round-score (get scores outcome)]
-    (+ throw-score round-score)))
+  (let [you (-> round-str
+                first
+                char->throw)
+        outcome (-> round-str
+                    last
+                    char->outcome)
+        planned-throw (get-in plan [outcome you])]
+    (+ (throw->score planned-throw) (outcome->score outcome))))
 
 (defn part-2
   [input]
   (let [lines (str/split-lines input)
-        scores (map plan-round lines)]
+        scores (map score-round-of-throw-and-outcome lines)]
     (apply + scores)))
+
+(def solution
+  {:year 2022
+   :day 2
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 2))
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 2)))
+  (aoc/run-solution solution))
