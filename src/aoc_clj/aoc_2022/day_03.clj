@@ -2,53 +2,47 @@
   (:require [clojure.string :as str]
             [clojure.set :as set]))
 
-(def sample-input
-  "vJrwpWtwJgWrhcsFMMfFFhFp
-jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
-PmmdzqPrVvPwwTWBwg
-wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
-ttgJtRGJQctTZtZT
-CrZsJsPPZsGzwwsLwLmpwMDw")
+(defn char->priority
+  [c]
+  (let [x (int c)]
+    (if (< x 91)
+      (+ x -65 27)
+      (+ x -97 1))))
+
+(defn rucksack->dupe-compartment-items
+  [rucksack]
+  (->> rucksack
+       (partition (/ (count rucksack) 2))
+       (map set)
+       (apply set/intersection)
+       vec))
 
 (defn part-1
   [input]
-  (let [lines (str/split-lines input)
-        commons (map #(->> %
-                           (partition (/ (count %) 2))
-                           (map set)
-                           (apply set/intersection)) lines)
-        commons-list (reduce #(apply conj %1 %2) [] commons)
-        priorities (map #(let [x (int %)]
-                           (if (< x 91)
-                             (+ x -65 27)
-                             (+ x -97 1)))
-                        commons-list)]
+  (let [rucksacks (str/split-lines input)
+        rucksacks-dupe-items (mapcat rucksack->dupe-compartment-items rucksacks)
+        priorities (map char->priority rucksacks-dupe-items)]
     (apply + priorities)))
 
-(defn group-common
+(defn group->common-item-type
   [group]
   (let [sets (map set group)]
     (first (apply set/intersection sets))))
 
 (defn part-2
   [input]
-  (let [lines (str/split-lines input)
-        groups (partition 3 lines)
-        commons (map group-common groups)
-        priorities (map #(let [x (int %)]
-                           (if (< x 91)
-                             (+ x -65 27)
-                             (+ x -97 1)))
-                        commons)]
+  (let [rucksacks (str/split-lines input)
+        groups (partition 3 rucksacks)
+        commons (map group->common-item-type groups)
+        priorities (map char->priority commons)]
     (apply + priorities)))
+
+(def solution
+  {:year 2022
+   :day 3
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (int \A)
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 3))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 3)))
+  (aoc/run-solution solution))
