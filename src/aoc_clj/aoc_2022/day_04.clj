@@ -15,42 +15,33 @@
   (let [[left right] (map parse-long (str/split range-str #"-"))]
     (set (range left (inc right)))))
 
-(defn parse-pair
+(defn either-pair-superset?
   [pair-str]
-  (let [[left right] (map parse-range (str/split pair-str #","))
-        x (or (set/superset? left right) (set/superset? right left))]
-    x))
+  (let [[left right] (map parse-range (str/split pair-str #","))]
+    (or (set/superset? left right)
+        (set/superset? right left))))
 
-(defn parse-any-overlap
+(defn pairs-overlap?
   [pair-str]
-  (let [[left right] (map parse-range (str/split pair-str #","))
-        x (empty? (set/intersection left right))]
-    (not x)))
+  (let [[left right] (map parse-range (str/split pair-str #","))]
+    (seq (set/intersection left right))))
 
 (defn part-1
   [input]
-  (let [lines (str/split-lines input)
-        overlapping-pairs (map parse-pair lines)]
-    (count (filter identity overlapping-pairs))))
+  (let [lines (str/split-lines input)]
+    (count (filter either-pair-superset? lines))))
 
 (defn part-2
   [input]
-  (let [lines (str/split-lines input)
-        overlapping-pairs (map parse-any-overlap lines)]
-    (count (filter identity overlapping-pairs))))
+  (let [lines (str/split-lines input)]
+    (count (filter pairs-overlap? lines))))
+
+(def solution
+  {:year 2022
+   :day 4
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (let [r (range 3 8)]
-    (set r))
-
-  (let [foo (set (range 92 92))
-        bar (set (range 90 91))]
-    (set/superset? bar foo))
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 4))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 4)))
+  (aoc/run-solution solution))
