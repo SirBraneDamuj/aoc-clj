@@ -1,121 +1,91 @@
 (ns aoc-clj.aoc-2022.day-05
-  (:require [clojure.string :as str]
-            [clojure.set :as set]
-            [clojure.pprint :as pp]))
+  (:require [clojure.string :as str]))
 
-;;     [D]
-;; [N]     [C]
-;; [Z] [M] [P]
-;; 1   2   3
-
-;; move 1 from 2 to 1
-;; move 3 from 1 to 3
-;; move 2 from 2 to 1
-;; move 1 from 1 to 2
-
-(def sample-input
-  "    [D]    
-[N] [C]    
-[Z] [M] [P]
- 1   2   3 
-
-move 1 from 2 to 1
-move 3 from 1 to 3
-move 2 from 2 to 1
-move 1 from 1 to 2")
+(defn cross-sections->nth-stack
+  [cross-sections stack-n]
+  (into [] (->> cross-sections
+                (map #(nth % stack-n))
+                (take-while #(not= % \space)))))
 
 (defn parse-diagram
   [s]
-  (let [lines (str/split-lines s)
-        across (mapv #(->> %
-                           (drop 1)
-                           (take-nth 4)) lines)
-        stacks (->> across
-                    last
-                    (mapv (comp dec parse-long str))
-                    vec)
-        stack-lines (reverse (drop-last 1 across))]
-    (mapv (fn [stack-n]
-            (->> stack-lines
-                 (mapv #(nth % stack-n))
-                 (take-while #(not= % \space))
-                 vec))
-          stacks)))
+  (let [cross-sections (->> (str/split-lines s)
+                            reverse
+                            rest
+                            (mapv #(->> %
+                                        (drop 1)
+                                        (take-nth 4))))
+        num-stacks (count (first cross-sections))]
+    (mapv #(cross-sections->nth-stack cross-sections %)
+          (range num-stacks))))
+
+(defn parse-instruction
+  [s]
+  (let [[_ n-str _ from-str _ to-str] (str/split s #" ")
+        [n from to] (mapv parse-long [n-str from-str to-str])]
+    [n (dec from) (dec to)]))
 
 (defn parse-instructions
   [s]
   (let [lines (str/split-lines s)]
-    (mapv
-     (fn [line]
-       (let [[_ n _ from _ to] (str/split line #" ")]
-         (mapv parse-long [n from to])))
-     lines)))
+    (mapv parse-instruction lines)))
 
-(defn perform-instruction
-  [from to n]
-  (if (zero? n)
-    [from to]
-    (let [crate (last from)
-          new-to (conj to crate)
-          new-from (vec (drop-last from))]
-      (perform-instruction new-from new-to (dec n)))))
+(defn move-crate
+  [[from to] _]
+  (let [crate (last from)
+        new-from (vec (drop-last from))
+        new-to (conj to crate)]
+    [new-from new-to]))
 
-(defn perform-instructions
-  [stacks instructions]
-  (if-not (seq instructions)
-    stacks
-    (let [[n from to] (first instructions)
-          [new-from new-to] (perform-instruction
-                             (nth stacks (dec from))
-                             (nth stacks (dec to))
-                             n)
-          new-stacks (-> stacks
-                         (assoc (dec from) new-from)
-                         (assoc (dec to) new-to))]
-      (perform-instructions new-stacks (rest instructions)))))
+(defn perform-instruction-9000
+  [stacks [n from to]]
+  (let [[new-from new-to] (reduce
+                           move-crate
+                           [(nth stacks from) (nth stacks to)]
+                           (range n))]
+    (-> stacks
+        (assoc from new-from)
+        (assoc to new-to))))
 
 (defn part-1
   [input]
   (let [[diagram instr-str] (str/split input #"\n\n")
         stacks (parse-diagram diagram)
         instructions (parse-instructions instr-str)
-        result (perform-instructions stacks instructions)]
+        result (reduce perform-instruction-9000 stacks instructions)]
     (str/join (mapv last result))))
 
-(defn perform-instruction-9001
-  [from to n]
+(defn move-crates
+  [n from to]
   (let [crates (take-last n from)
         new-to (concat to crates)
         new-from (drop-last n from)]
     [new-from new-to]))
 
-(defn perform-instructions-9001
-  [stacks instructions]
-  (if-not (seq instructions)
-    stacks
-    (let [[n from to] (first instructions)
-          [new-from new-to] (perform-instruction-9001
-                             (nth stacks (dec from))
-                             (nth stacks (dec to))
-                             n)
-          new-stacks (-> stacks
-                         (assoc (dec from) new-from)
-                         (assoc (dec to) new-to))]
-      (perform-instructions-9001 new-stacks (rest instructions)))))
+(defn perform-instruction-9001
+  [stacks [n from to]]
+  (let [[new-from new-to] (move-crates
+                           n
+                           (nth stacks from)
+                           (nth stacks to))]
+    (-> stacks
+        (assoc from new-from)
+        (assoc to new-to))))
 
 (defn part-2
   [input]
   (let [[diagram instr-str] (str/split input #"\n\n")
         stacks (parse-diagram diagram)
         instructions (parse-instructions instr-str)
-        result (perform-instructions-9001 stacks instructions)]
+        result (reduce perform-instruction-9001 stacks instructions)]
     (str/join (mapv last result))))
+
+(def solution
+  {:year 2022
+   :day 5
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 5))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 5)))
+  (aoc/run-solution solution))
