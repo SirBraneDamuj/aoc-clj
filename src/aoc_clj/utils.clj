@@ -1,5 +1,12 @@
 (ns aoc-clj.utils
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.pprint :refer [pprint]]))
+
+
+(defn ppeek
+  [x]
+  (pprint x)
+  x)
 
 (defn parse-binary
   [s]
