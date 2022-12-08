@@ -1,5 +1,6 @@
 (ns aoc-clj.aoc-2022.day-05
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [aoc-clj.utils :as util]))
 
 (defn cross-sections->nth-stack
   [cross-sections stack-n]
@@ -49,7 +50,7 @@
 
 (defn part-1
   [input]
-  (let [[diagram instr-str] (str/split input #"\n\n")
+  (let [[diagram instr-str] (util/split-newline-delim-line-groups input)
         stacks (parse-diagram diagram)
         instructions (parse-instructions instr-str)
         result (reduce perform-instruction-9000 stacks instructions)]
@@ -74,7 +75,7 @@
 
 (defn part-2
   [input]
-  (let [[diagram instr-str] (str/split input #"\n\n")
+  (let [[diagram instr-str] (util/split-newline-delim-line-groups input)
         stacks (parse-diagram diagram)
         instructions (parse-instructions instr-str)
         result (reduce perform-instruction-9001 stacks instructions)]

@@ -1,5 +1,6 @@
 (ns aoc-clj.aoc-2022.day-01
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [aoc-clj.utils :as util]))
 
 (defn elf-calories
   [groups]
@@ -8,12 +9,12 @@
 
 (defn part-1
   [input]
-  (let [groups (str/split input #"\n\n")]
+  (let [groups (util/split-newline-delim-line-groups input)]
     (apply max (elf-calories groups))))
 
 (defn part-2
   [input]
-  (let [groups (str/split input #"\n\n")
+  (let [groups (util/split-newline-delim-line-groups input)
         elf-cals-sorted (sort (elf-calories groups))
         top-3 (take-last 3 elf-cals-sorted)]
     (apply + top-3)))
