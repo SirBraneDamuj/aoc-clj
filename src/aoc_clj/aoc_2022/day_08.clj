@@ -1,14 +1,11 @@
 (ns aoc-clj.aoc-2022.day-08
-  (:require [clojure.string :as str]
-            [aoc-clj.utils :as util]
-            [clojure.pprint :refer [pprint]]))
+  (:require [clojure.string :as str]))
 
-(def sample-input
-  "30373
-25512
-65332
-33549
-35390")
+(defn coordinates
+  [num-rows num-cols]
+  (for [row-n (range num-rows)
+        col-n (range num-cols)]
+    [row-n col-n]))
 
 (defn parse-rows
   [input]
@@ -17,98 +14,93 @@
      #(mapv (comp parse-long str) %)
      lines)))
 
-(defn parse-columns
+(defn parse-cols
   [input]
   (let [lines (str/split-lines input)]
     (into []
           (for [x (range (count (first lines)))]
             (mapv #(parse-long (str (nth % x))) lines)))))
 
+(defn parse-grid
+  [input]
+  (let [rows (parse-rows input)
+        cols (parse-cols input)
+        coords (coordinates (count rows) (count cols))]
+    {:rows rows
+     :cols cols
+     :coords coords}))
+
 (def dirs
-  [:up
-   :down
-   :left
-   :right])
+  [[:up    (fn [_ col row-n _]
+             (reverse (subvec col 0 row-n)))]
+   [:down  (fn [_ col row-n _]
+             (subvec col (inc row-n)))]
+   [:left  (fn [row _ _ col-n]
+             (reverse (subvec row 0 col-n)))]
+   [:right (fn [row _ _ col-n]
+             (subvec row (inc col-n)))]])
+
+
+(defn edge?
+  [rows cols row-n col-n]
+  (or (= 0 row-n)
+      (= 0 col-n)
+      (= (dec (count rows)) row-n)
+      (= (dec (count cols)) col-n)))
+
+(defn tree-visible?
+  [row col row-n col-n]
+  (let [height (nth row col-n)]
+    (some
+     (fn [[_ path-fn]]
+       (let [path (path-fn row col row-n col-n)]
+         (every? #(< % height) path)))
+     dirs)))
 
 (defn part-1
   [input]
-  (let [rows (parse-rows input)
-        cols (parse-columns input)
-        result
-        (for [row-n (range (count rows))
-              col-n (range (count cols))]
-          (if (or (= 0 row-n)
-                  (= 0 col-n)
-                  (= (dec (count rows)) row-n)
-                  (= (dec (count cols)) col-n))
-            true
-            (let [row (nth rows row-n)
-                  col (nth cols col-n)
-                  tree-height (nth (nth rows row-n) col-n)
-                  b
-                  (reduce
-                   (fn [vis dir]
-                     (let [blocked (cond
-                                     (= :up dir)
-                                     (some #(>= % tree-height) (subvec col 0 row-n))
+  (let [{:keys [rows cols coords]} (parse-grid input)]
+    (->> coords
+         (filter
+          (fn [[row-n col-n]]
+            (if (edge? rows cols row-n col-n)
+              true
+              (let [row (nth rows row-n)
+                    col (nth cols col-n)]
+                (tree-visible? row col row-n col-n)))))
+         count)))
 
-                                     (= :down dir)
-                                     (some #(>= % tree-height) (subvec col (inc row-n)))
-
-                                     (= :left dir)
-                                     (some #(>= % tree-height) (subvec row 0 col-n))
-
-                                     (= :right dir)
-                                     (some #(>= % tree-height) (subvec row (inc col-n))))]
-                       (or vis (not blocked))))
-                   false
-                   dirs)]
-              b)))]
-    (count (filter identity result))))
+(defn scenic-score
+  [row col row-n col-n]
+  (let [height (nth row col-n)]
+    (->> dirs
+         (map (fn [[_ path-fn]]
+                (let [path (path-fn row col row-n col-n)
+                      count-til-blocked (count (take-while #(< % height) path))]
+                  (if (= count-til-blocked (count path))
+                    count-til-blocked
+                    (inc count-til-blocked)))))
+         (reduce *))))
 
 (defn part-2
   [input]
-  (let [rows (parse-rows input)
-        cols (parse-columns input)
-        result
-        (for [row-n (range (count rows))
-              col-n (range (count cols))]
-          (if (or (= 0 row-n)
-                  (= 0 col-n)
-                  (= (dec (count rows)) row-n)
-                  (= (dec (count cols)) col-n))
-            0
-            (let [row (nth rows row-n)
-                  col (nth cols col-n)
-                  tree-height (nth (nth rows row-n) col-n)
-                  dists
-                  (map
-                   (fn [dir]
-                     (let [path (cond
-                                  (= :up dir)
-                                  (reverse (subvec col 0 row-n))
+  (let [{:keys [rows cols coords]} (parse-grid input)]
+    (->> coords
+         (map
+          (fn [[row-n col-n]]
+            (if (edge? rows cols row-n col-n)
+              0
+              (let [row (nth rows row-n)
+                    col (nth cols col-n)]
+                (scenic-score row col row-n col-n)))))
+         (apply max))))
 
-                                  (= :down dir)
-                                  (subvec col (inc row-n))
-
-                                  (= :left dir)
-                                  (reverse (subvec row 0 col-n))
-
-                                  (= :right dir)
-                                  (subvec row (inc col-n)))
-                           count-til-blocked (count (take-while #(< % tree-height) path))]
-                       (if (= count-til-blocked (count path))
-                         count-til-blocked
-                         (inc count-til-blocked))))
-                   dirs)]
-              (apply * dists))))]
-    (apply max result)))
+(def solution
+  {:year 2022
+   :day 8
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 8))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 8)))
+  (aoc/run-solution solution))
