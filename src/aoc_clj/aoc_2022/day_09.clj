@@ -1,27 +1,5 @@
 (ns aoc-clj.aoc-2022.day-09
-  (:require [clojure.string :as str]
-            [aoc-clj.utils :as util]
-            [clojure.pprint :refer [pprint]]))
-
-(def sample-input
-  "R 4
-U 4
-L 3
-D 1
-R 4
-D 1
-L 5
-R 2")
-
-(def sample-input-2
-  "R 5
-U 8
-L 8
-D 3
-R 17
-D 10
-L 25
-U 20")
+  (:require [clojure.string :as str]))
 
 (defn parse-motion
   [s]
@@ -43,43 +21,27 @@ U 20")
     (= "R" dir)
     [(inc x) y]))
 
+(defn move-component-if-needed
+  [n distance]
+  (cond
+    (zero? distance)
+    n
+
+    (neg? distance)
+    (dec n)
+
+    (pos? distance)
+    (inc n)))
 
 (defn move-toward-point
   [[x y] [target-x target-y]]
   (let [x-distance (- target-x x)
         y-distance (- target-y y)]
-    (cond
-      (and (zero? x-distance)
-           (zero? y-distance))
-      [x y]
-
-      (zero? x-distance)
-      (cond
-        (or (zero? y-distance)
-            (= 1 (abs y-distance)))
-        [x y]
-
-        :else
-        [x ((if (pos? y-distance) inc dec) y)])
-
-      (= 1 (abs x-distance))
-      (cond
-        (or (zero? y-distance)
-            (= 1 (abs y-distance)))
-        [x y]
-
-        :else
-        [((if (pos? x-distance) inc dec) x)
-         ((if (pos? y-distance) inc dec) y)])
-
-      :else
-      (cond
-        (zero? y-distance)
-        [((if (pos? x-distance) inc dec) x) y]
-
-        :else
-        [((if (pos? x-distance) inc dec) x)
-         ((if (pos? y-distance) inc dec) y)]))))
+    (if (or (> (abs x-distance) 1)
+            (> (abs y-distance) 1))
+      [(move-component-if-needed x x-distance)
+       (move-component-if-needed y y-distance)]
+      [x y])))
 
 (defn perform-step
   [dir {:keys [knots t-positions]} _]
@@ -100,22 +62,11 @@ U 20")
     :t-positions t-positions}
    (range distance)))
 
-(defn part-1
-  [input]
+(defn trace-rope
+  [input size]
   (let [lines (str/split-lines input)
         motions (map parse-motion lines)
-        {:keys [t-positions]} (reduce
-                               perform-motion
-                               {:t-positions #{[0 0]}
-                                :knots [[0 0] [0 0]]}
-                               motions)]
-    (count t-positions)))
-
-(defn part-2
-  [input]
-  (let [lines (str/split-lines input)
-        motions (map parse-motion lines)
-        knots (into [] (repeat 10 [0 0]))
+        knots (repeat size [0 0])
         {:keys [t-positions]} (reduce
                                perform-motion
                                {:t-positions #{[0 0]}
@@ -123,11 +74,20 @@ U 20")
                                motions)]
     (count t-positions)))
 
+(defn part-1
+  [input]
+  (trace-rope input 2))
+
+(defn part-2
+  [input]
+  (trace-rope input 10))
+
+(def solution
+  {:year 2022
+   :day 9
+   :part-1 part-1
+   :part-2 part-2})
+
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 9))
-
-  (part-2 sample-input-2)
-  (part-2 (aoc/get-puzzle-input 2022 9)))
+  (aoc/run-solution solution))
