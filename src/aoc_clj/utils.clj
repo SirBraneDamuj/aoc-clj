@@ -5,7 +5,7 @@
 
 (defn ppeek
   [x]
-  (pprint x)
+  (pprint ["ppeek" x])
   x)
 
 (defn parse-binary
