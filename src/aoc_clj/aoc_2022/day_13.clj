@@ -1,71 +1,49 @@
 (ns aoc-clj.aoc-2022.day-13
   (:require [clojure.string :as str]
             [aoc-clj.utils :as util]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.edn :as edn]))
 
-(def sample-input
-  "[1,1,3,1,1]
-[1,1,5,1,1]
-
-[[1],[2,3,4]]
-[[1],4]
-
-[9]
-[[8,7,6]]
-
-[[4,4],4,4]
-[[4,4],4,4,4]
-
-[7,7,7,7]
-[7,7,7]
-
-[]
-[3]
-
-[[[]]]
-[[]]
-
-[1,[2,[3,[4,[5,6,7]]]],8,9]
-[1,[2,[3,[4,[5,6,0]]]],8,9]")
+(defn vec-wrap
+  [x-or-xs]
+  (if (vector? x-or-xs)
+    x-or-xs
+    [x-or-xs]))
 
 (defn compare-values
   [x y]
-  (let [result
-        (cond
-          (and (int? x)
-               (int? y))
-          (cond
-            (= x y)
+  (cond
+    (and (int? x)
+         (int? y))
+    (cond
+      (= x y)
+      nil
+      (< x y)
+      :pass
+      :else
+      :fail)
+
+    (and (vector? x)
+         (vector? y))
+    (let [idxs (range (count x))]
+      (or (some (fn [idx]
+                  (if (>= idx (count y))
+                    :fail
+                    (compare-values (nth x idx) (nth y idx))))
+                idxs)
+          (if (= (count x) (count y))
             nil
-            (< x y)
-            :pass
-            :else
-            :fail)
+            :pass)))
 
-          (and (vector? x)
-               (vector? y))
-          (let [idxs (range (count x))]
-            (or (some (fn [idx]
-                        (if (>= idx (count y))
-                          :fail
-                          (compare-values (nth x idx) (nth y idx))))
-                      idxs)
-                (if (= (count x) (count y))
-                  nil
-                  :pass)))
-
-          :else
-          (let [x-vec (if (vector? x) x [x])
-                y-vec (if (vector? y) y [y])]
-            (compare-values x-vec y-vec)))]
-    #_(pprint [x y result])
-    result))
+    :else
+    (let [x-vec (vec-wrap x)
+          y-vec (vec-wrap y)]
+      (compare-values x-vec y-vec))))
 
 (defn parse-packet
   [packet-line]
   (->> packet-line
        str/split-lines
-       (map read-string)))
+       (map edn/read-string)))
 
 (defn parse-input
   [input]
@@ -81,7 +59,6 @@
                       (if (= :pass (compare-values x y))
                         (inc idx)
                         0)))
-       util/ppeek
        (apply +)))
 
 (defn packet-comp
@@ -97,13 +74,15 @@
 
 (defn part-2
   [input]
-  (->> input
-       parse-input
-       (apply concat)
-       (#(conj % [[6]] [[2]]))
-       (sort packet-comp)
-       (#(* (inc (.indexOf % [[6]]))
-            (inc (.indexOf % [[2]]))))))
+  (let [divider-1 [[6]]
+        divider-2 [[2]]]
+    (->> input
+         parse-input
+         (apply concat)
+         (#(conj % divider-1 divider-2))
+         (sort packet-comp)
+         (#(* (inc (.indexOf % divider-1))
+              (inc (.indexOf % divider-2)))))))
 
 (def solution
   {:year 2022
@@ -113,9 +92,4 @@
 
 (comment
   (require '[aoc-clj.core :as aoc])
-
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 13))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 13)))
+  (aoc/run-solution solution))
