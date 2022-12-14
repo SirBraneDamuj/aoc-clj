@@ -28,7 +28,6 @@
 [1,[2,[3,[4,[5,6,7]]]],8,9]
 [1,[2,[3,[4,[5,6,0]]]],8,9]")
 
-;; this is just the sample input. it was pretty close to the real thing this time
 (def real-input
   (slurp (io/file "resources" "real-input" "2022" "day13.txt")))
 

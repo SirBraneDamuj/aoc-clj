@@ -1,12 +1,8 @@
 (ns aoc-clj.aoc-2022.day-14
   (:require [clojure.string :as str]
-            [aoc-clj.utils :as utils :refer [ppeek]]
-            [clojure.set :as set]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.set :as set]))
 
-(def sample-input
-  "498,4 -> 498,6 -> 496,6
-503,4 -> 502,4 -> 502,9 -> 494,9")
+(def sand-origin [500 0])
 
 (defn points-along-line
   [[x1 y1] [x2 y2]]
@@ -42,9 +38,27 @@
        (apply set/union)
        (reduce #(assoc %1 %2 :rock) {})))
 
+(defn print-grid
+  [grid]
+  (let [min-x (apply min (map first (keys grid)))
+        max-x (apply max (map first (keys grid)))
+        max-y (apply max (map second (keys grid)))]
+    (doseq [y (range 0 (inc max-y))]
+      (let [row (map #(let [cell (get grid [% y])]
+                        (cond
+                          (= sand-origin [% y])
+                          "X"
+                          (= :rock cell)
+                          "#"
+                          (= :sand cell)
+                          "o"
+                          :else
+                          ".")) (range min-x (inc max-x)))]
+        (println (str/join row))))))
+
 (defn next-sand-fall
   [grid max-y]
-  (loop [[sand-x sand-y] [500 0]]
+  (loop [[sand-x sand-y] sand-origin]
     (if (> sand-y max-y)
       nil
       (let [current [sand-x sand-y]
@@ -56,32 +70,9 @@
           current
           (recur (some #(if (get grid %) nil %) options)))))))
 
-
-
-(defn print-grid
-  [grid]
-  (let [min-x (apply min (map first (keys grid)))
-        max-x (apply max (map first (keys grid)))
-        min-y (apply min (map second (keys grid)))
-        max-y (apply max (map second (keys grid)))]
-    (doseq [y (range 0 (inc max-y))]
-      (let [row (map #(let [cell (get grid [% y])]
-                        (cond
-                          (= [500 0] [% y])
-                          "X"
-                          (= :rock cell)
-                          "#"
-                          (= :sand cell)
-                          "o"
-                          :else
-                          ".")) (range min-x (inc max-x)))]
-        (println (str/join row))))))
-
-(defn part-1-real
-  [input]
-  (let [start-grid (parse-input input)
-        max-y (apply max (map second (keys start-grid)))]
-    (print-grid start-grid)
+(defn distribute-sand-until-void
+  [start-grid]
+  (let [max-y (apply max (map second (keys start-grid)))]
     (loop [grid start-grid]
       (let [next-sand (next-sand-fall grid max-y)]
         (if next-sand
@@ -90,18 +81,17 @@
 
 (defn part-1
   [input]
-  (let [result (part-1-real input)]
-    (println "FOOBARFOOBARFOOBARFOOBARFOOBARFOOBARFOOBAR")
-    (print-grid result)
-    (->> result
-         vals
-         (filter #(= :sand %))
-         count)))
+  (->> input
+       parse-input
+       distribute-sand-until-void
+       vals
+       (filter #(= :sand %))
+       count))
 
-(defn next-sand-fall-2
-  [grid max-y]
-  (loop [[sand-x sand-y] [500 0]]
-    (if (= max-y (inc sand-y))
+(defn next-sand-fall-with-floor
+  [grid floor-y]
+  (loop [[sand-x sand-y] sand-origin]
+    (if (= floor-y (inc sand-y))
       [sand-x sand-y]
       (let [current [sand-x sand-y]
             down [sand-x (inc sand-y)]
@@ -112,32 +102,31 @@
           current
           (recur (some #(when-not (get grid %) %) options)))))))
 
-(defn part-2-real
-  [input]
-  (let [start-grid (parse-input input)
-        max-y (+ 2 (apply max (map second (keys start-grid))))]
-    (print-grid start-grid)
+(defn distribute-sand-until-floor
+  [start-grid]
+  (let [floor-y (+ 2 (apply max (map second (keys start-grid))))]
     (loop [grid start-grid]
-      (let [next-sand (next-sand-fall-2 grid max-y)]
-        (if (and next-sand
-                 (not= [500 0] next-sand))
-          (recur (assoc grid next-sand :sand))
-          grid)))))
+      (let [next-sand (next-sand-fall-with-floor grid floor-y)
+            next-grid (assoc grid next-sand :sand)]
+        (if (= sand-origin next-sand)
+          next-grid
+          (recur next-grid))))))
 
 (defn part-2
   [input]
-  (let [result (part-2-real input)]
-    (println "FOOBARFOOBARFOOBARFOOBARFOOBARFOOBARFOOBAR")
-    (print-grid result)
-    (->> result
-         vals
-         (filter #(= :sand %))
-         count)))
+  (->> input
+       parse-input
+       distribute-sand-until-floor
+       vals
+       (filter #(= :sand %))
+       count))
+
+(def solution
+  {:year 2022
+   :day 14
+   :part-1 part-1
+   :part-2 part-2})
 
 (comment
   (require '[aoc-clj.core :as aoc])
-  (part-1 sample-input)
-  (part-1 (aoc/get-puzzle-input 2022 14))
-
-  (part-2 sample-input)
-  (part-2 (aoc/get-puzzle-input 2022 14)))
+  (aoc/run-solution solution))
