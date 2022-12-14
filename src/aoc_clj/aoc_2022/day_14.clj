@@ -56,6 +56,8 @@
           current
           (recur (some #(if (get grid %) nil %) options)))))))
 
+
+
 (defn print-grid
   [grid]
   (let [min-x (apply min (map first (keys grid)))
@@ -86,8 +88,6 @@
           (recur (assoc grid next-sand :sand))
           grid)))))
 
-
-
 (defn part-1
   [input]
   (let [result (part-1-real input)]
@@ -98,8 +98,41 @@
          (filter #(= :sand %))
          count)))
 
+(defn next-sand-fall-2
+  [grid max-y]
+  (loop [[sand-x sand-y] [500 0]]
+    (if (= max-y (inc sand-y))
+      [sand-x sand-y]
+      (let [current [sand-x sand-y]
+            down [sand-x (inc sand-y)]
+            down-left [(dec sand-x) (inc sand-y)]
+            down-right [(inc sand-x) (inc sand-y)]
+            options [down down-left down-right]]
+        (if (every? #(get grid %) options)
+          current
+          (recur (some #(when-not (get grid %) %) options)))))))
+
+(defn part-2-real
+  [input]
+  (let [start-grid (parse-input input)
+        max-y (+ 2 (apply max (map second (keys start-grid))))]
+    (print-grid start-grid)
+    (loop [grid start-grid]
+      (let [next-sand (next-sand-fall-2 grid max-y)]
+        (if (and next-sand
+                 (not= [500 0] next-sand))
+          (recur (assoc grid next-sand :sand))
+          grid)))))
+
 (defn part-2
-  [input])
+  [input]
+  (let [result (part-2-real input)]
+    (println "FOOBARFOOBARFOOBARFOOBARFOOBARFOOBARFOOBAR")
+    (print-grid result)
+    (->> result
+         vals
+         (filter #(= :sand %))
+         count)))
 
 (comment
   (require '[aoc-clj.core :as aoc])
