@@ -70,8 +70,63 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
   (let [valves (parse-input input)]
     (max-value-of-move valves "AA" 29 true)))
 
+(defn pairs
+  [xs ys]
+  (distinct (for [x xs
+                  y ys]
+              (sort [x y]))))
+
+(defn max-value-of-move-with-helper
+  [valves position-1 position-2 moves-remaining print-progress?]
+  (let [valve-1 (get valves position-1)
+        valve-2 (get valves position-2)
+        open-valves (filter #(= :open (:status %)) (vals valves))
+        open-valve-names (map :valve open-valves)
+        accrued-value (if (seq open-valves) (apply + (map :rate open-valves)) 0)
+        cache-key-1 [(str/join (sort [position-1 position-2])) moves-remaining (str/join (sort open-valve-names))]]
+    (if-let [cached (get @cache cache-key-1)]
+      cached
+      (let [result (if (<= moves-remaining 0)
+                     accrued-value
+                     (let [moves-1 (if (or (= (:rate valve-1) 0)
+                                           (= :open (:status valve-1)))
+                                     (:tunnels valve-1)
+                                     (conj (:tunnels valve-1) position-1))
+                           moves-2 (if (or (= (:rate valve-2) 0)
+                                           (= :open (:status valve-2)))
+                                     (:tunnels valve-2)
+                                     (conj (:tunnels valve-2) position-2))
+                           total-moves (filter (fn [[move-1 move-2]]
+                                                 (not= move-1 move-2)) (pairs moves-1 moves-2))
+                           move-values (for [[move-1 move-2] total-moves]
+                                         (let [new-valves (cond-> valves
+                                                            (= position-1 move-1)
+                                                            (assoc-in [position-1 :status] :open)
+                                                            (= position-2 move-2)
+                                                            (assoc-in [position-2 :status] :open))]
+                                           (when print-progress?
+                                             (pprint ["PROGRESS: FINISHED FIRST MOVE" [move-1 move-2]]))
+                                           (max-value-of-move-with-helper new-valves move-1 move-2 (dec moves-remaining) false)))]
+                       (if (seq move-values)
+                         (+ accrued-value (apply max move-values))
+                         accrued-value)))]
+        (swap! cache assoc cache-key-1 result)
+        result))))
+
 (defn part-2
-  [input])
+  [input]
+  (reset! cache {})
+  (let [valves (parse-input input)]
+    (do
+      ;; (max-value-of-move-with-helper valves "AA" "AA" 5 true)
+      ;; (pprint 5)
+      ;; (max-value-of-move-with-helper valves "AA" "AA" 10 true)
+      ;; (pprint 10)
+      ;; (max-value-of-move-with-helper valves "AA" "AA" 15 true)
+      ;; (pprint 15)
+      ;; (max-value-of-move-with-helper valves "AA" "AA" 20 true)
+      ;; (pprint 20)
+      (max-value-of-move-with-helper valves "AA" "AA" 25 true))))
 
 (comment
   (require '[aoc-clj.core :as aoc])
@@ -81,8 +136,6 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
 
   (part-1 sample-input)
   (part-1 (aoc/get-puzzle-input 2022 16))
-
-  (+ 1 2)
 
   (part-2 sample-input)
   (part-2 (aoc/get-puzzle-input 2022 16)))
